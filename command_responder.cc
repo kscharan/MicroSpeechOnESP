@@ -16,28 +16,50 @@ limitations under the License.
 #include "command_responder.h"
 #include "esp_now.h"
 #include <cstring>
+#include <stdio.h>
 
 // The default implementation writes out the name of the recognized command
 // to the error console. Real applications will want to take some custom
 // action instead, and should implement their own versions of this function.
-static uint8_t lamp_mac_address[6] = {0x30, 0xAE, 0xA4, 0x97, 0xC1, 0xE8};
+static uint8_t Lamp_mac_address[6] = {0x30, 0xAE, 0xA4, 0x97, 0xC1, 0xE8};
+static uint8_t TV_mac_address[6] = {0x30, 0xAE, 0xA4, 0x97, 0xC1, 0xE9};
 void RespondToCommand(tflite::ErrorReporter* error_reporter,
                       int32_t current_time, const char* found_command,
-                      uint8_t score, bool is_new_command) {
+                      uint8_t score, bool is_new_command,
+                      int activateLampControl, int activateTvControl) {
   if (is_new_command) {
 
-    bool commandLamp;
+    bool commandDevice;           
     TF_LITE_REPORT_ERROR(error_reporter, "Heard %s (%d) @%dms", found_command,
                          score, current_time);
     if(strcmp(found_command, "on") == 0)
     {
-      commandLamp = false;
-      esp_now_send(lamp_mac_address, (const uint8_t *) &commandLamp, sizeof(commandLamp));
+      commandDevice = true;
+      if(activateLampControl == 1)
+      {
+        esp_now_send(Lamp_mac_address, (const uint8_t *) &commandDevice, sizeof(commandDevice));
+       TF_LITE_REPORT_ERROR(error_reporter, "switch on Lamp");
+      }
+      if(activateTvControl == 1)
+      {
+        esp_now_send(TV_mac_address, (const uint8_t *) &commandDevice, sizeof(commandDevice));
+        TF_LITE_REPORT_ERROR(error_reporter, "switch on Tv");
+      }
+      
     }
     else if (strcmp(found_command, "off") == 0)
     {
-      commandLamp = true;
-      esp_now_send(lamp_mac_address, (const uint8_t *) &commandLamp, sizeof(commandLamp));
+      commandDevice = false;
+      if(activateLampControl == 0)
+      {
+        esp_now_send(Lamp_mac_address, (const uint8_t *) &commandDevice, sizeof(commandDevice));
+        TF_LITE_REPORT_ERROR(error_reporter, "switch off Lamp");
+      }
+      if(activateTvControl == 0)
+      {
+        esp_now_send(TV_mac_address, (const uint8_t *) &commandDevice, sizeof(commandDevice));
+        TF_LITE_REPORT_ERROR(error_reporter, "switch off Tv");
+      }
     }
     
   }
